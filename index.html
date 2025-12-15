@@ -1,69 +1,125 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Emote Picker</title>
-    <link rel="stylesheet" href="/static/style.css">
-  </head>
-  <body>
-    <main class="container">
-      <h1>LEO MDZ EMOTE WEB</h1>
-      <div class="content">
-        <aside class="sidebar">
-          <div class="controls">
-            <div class="uids">
-              <label class="uidlabel">UID 1 <input id="uid1" placeholder="uid1"></label>
-              <label class="uidlabel">UID 2 <input id="uid2" placeholder="uid2"></label>
-              <label class="uidlabel">UID 3 <input id="uid3" placeholder="uid3"></label>
-              <label class="uidlabel">UID 4 <input id="uid4" placeholder="uid4"></label>
-            </div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>TXT para estoque.json</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #020617;
+            color: #e5e7eb;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-            <div class="teamgroup">
-              <div class="teamrow">
-                <label class="label">Team code
-                  <input id="teamcode" placeholder="e.g. 4356375">
-                </label>
+        .box {
+            background: #020617;
+            border: 1px solid #1e293b;
+            padding: 20px;
+            border-radius: 10px;
+            width: 420px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+        }
 
-                <!-- Quick mode toggle -->
-                <label class="switch" title="Quick mode (fast emote)">
-                  <input type="checkbox" id="quickmode">
-                  <span class="slider"></span>
-                </label>
-              </div>
+        input, button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+        }
 
-              <div class="buttons" id="actionButtons">
-                <button id="join">Join</button>
-                <button id="leave">Leave</button>
-              </div>
-            </div>
-          </div>
+        button {
+            background: #22c55e;
+            color: #022c22;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
-          <div id="status" class="status"></div>
-        </aside>
+        button:hover {
+            background: #16a34a;
+        }
 
-        <main class="mainarea">
-          <div class="categories">
-            {% for cat in categories %}
-              <button class="catbtn {% if cat.name == 'All' %}active{% endif %}" data-category="{{ cat.name }}" data-emote-codes="{{ cat.emotes|join(',') }}">{{ cat.name }}</button>
-            {% endfor %}
-          </div>
+        pre {
+            background: #020617;
+            border: 1px solid #1e293b;
+            padding: 10px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 13px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
 
-          <section class="grid" id="grid">
-            {% for emote in emotes %}
-              <div class="cell" data-emote-id="{{ emote.rsplit('.',1)[0] }}">
-                <img src="/emote_files/{{ emote }}" data-emote-id="{{ emote.rsplit('.',1)[0] }}" alt="{{ emote }}">
-              </div>
-            {% endfor %}
-          </section>
-        </main>
-      </div>
+<div class="box">
+    <h2>Upload TXT → estoque.json</h2>
 
-      <footer>
-        <small class="credit"><strong>DEVELOPED BY LEO MODZ</strong></small>
-      </footer>
-    </main>
+    <input type="file" id="fileInput" accept=".txt">
+    <button onclick="converter()">Converter e Baixar</button>
 
-    <script src="/static/app.js"></script>
-  </body>
+    <pre id="log">Aguardando arquivo...</pre>
+</div>
+
+<script>
+function converter() {
+    const input = document.getElementById("fileInput");
+    const log = document.getElementById("log");
+
+    if (!input.files.length) {
+        alert("Selecione um arquivo .txt");
+        return;
+    }
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+        const linhas = e.target.result.split(/\r?\n/);
+        const estoque = [];
+
+        linhas.forEach((linha, index) => {
+            linha = linha.trim();
+            if (!linha) return;
+
+            const partes = linha.split(":");
+            if (partes.length === 2) {
+                estoque.push({
+                    usuario: partes[0],
+                    senha: partes[1]
+                });
+            }
+        });
+
+        if (!estoque.length) {
+            log.textContent = "Nenhuma conta válida encontrada.";
+            return;
+        }
+
+        const json = JSON.stringify(estoque, null, 4);
+        baixarJSON(json);
+        log.textContent = `✔ ${estoque.length} contas salvas em estoque.json`;
+    };
+
+    reader.readAsText(file);
+}
+
+function baixarJSON(conteudo) {
+    const blob = new Blob([conteudo], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "estoque.json";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
 </html>
